@@ -1,0 +1,34 @@
+# -----------------------------
+# 🛑 SECURITY: SECRETS
+# -----------------------------
+.env
+.env.local
+.env.*.local
+
+# -----------------------------
+# 📦 DEPENDENCIES
+# -----------------------------
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json # (Optional: Keep this if you want version lock, but safe to ignore for solo MVPs to avoid conflicts)
+
+# -----------------------------
+# 🏗️ BUILD OUTPUT
+# -----------------------------
+dist
+dist-ssr
+build
+coverage
+
+# -----------------------------
+# 🖥️ OS JUNK
+# -----------------------------
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs
+*.njsproj
+*.sln
+*.sw?
