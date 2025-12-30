@@ -1,10 +1,21 @@
+import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { KeyboardControls, PointerLockControls } from '@react-three/drei';
+import { KeyboardControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
-import { Experience } from './Experience';
-import { Suspense } from 'react';
 
-// Define the WASD key map
+// -----------------------------------------------------------------------------
+// IMPORTS
+// -----------------------------------------------------------------------------
+// 1. The Visual Interface (HUD)
+import { HUD } from './components/HUD';
+
+// 2. The 3D World
+// FIX APPLIED HERE: Added curly braces { } because Experience is a named export.
+import { Experience } from './Experience'; 
+
+// -----------------------------------------------------------------------------
+// CONFIGURATION
+// -----------------------------------------------------------------------------
 const keyboardMap = [
   { name: 'forward', keys: ['ArrowUp', 'w', 'W'] },
   { name: 'backward', keys: ['ArrowDown', 's', 'S'] },
@@ -13,37 +24,30 @@ const keyboardMap = [
   { name: 'jump', keys: ['Space'] },
 ];
 
-export default function App() {
+// -----------------------------------------------------------------------------
+// MAIN COMPONENT
+// -----------------------------------------------------------------------------
+function App() {
   return (
-    <div style={{ width: '100vw', height: '100vh', background: '#111' }}>
-      {/* 1. The 3D Canvas */}
+    // PARENT CONTAINER: Holds both the 2D HUD and the 3D Canvas
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', background: 'black' }}>
+      
+      {/* 1. THE HEAD-UP DISPLAY (2D Layer) */}
+      <HUD />
+
+      {/* 2. THE 3D WORLD (Canvas Layer) */}
       <KeyboardControls map={keyboardMap}>
-        <Canvas shadows camera={{ fov: 45, position: [0, 0, 0] }}>
-          
-          {/* 2. Physics World (Gravity enabled) */}
+        <Canvas shadows camera={{ fov: 45, position: [0, 5, 10] }}>
           <Suspense fallback={null}>
-            <Physics gravity={[0, -9.81, 0]}>
+            <Physics>
               <Experience />
             </Physics>
           </Suspense>
-
-          {/* 3. Helper: Locks mouse to screen when you click */}
-          <PointerLockControls />
-          
         </Canvas>
       </KeyboardControls>
-
-      {/* 4. UI Overlay (Crosshair) */}
-      <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        width: '10px', height: '10px', background: 'white',
-        borderRadius: '50%', transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none', opacity: 0.7
-      }} />
       
-      <div style={{ position: 'absolute', top: '20px', left: '20px', color: 'white', fontFamily: 'monospace' }}>
-        CLICK TO START <br/> WASD to Move
-      </div>
     </div>
   );
 }
+
+export default App;
