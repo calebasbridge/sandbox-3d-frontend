@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNeuralBrain } from '../hooks/useNeuralBrain';
 
-// ✅ CORRECTED URL (Matches your uploaded file)
+// ✅ YOUR CORRECT WORKER URL
 const WORKER_URL = "https://sandbox-3d-brain.caleb-a71.workers.dev";
 
 export function HUD() {
@@ -22,25 +22,29 @@ export function HUD() {
 
   return (
     <div style={{
-      position: 'absolute',
+      position: 'fixed', // changed from absolute to fixed to ensure it stays on screen
       top: 0,
       left: 0,
-      width: '100%',
-      height: '100%',
-      pointerEvents: 'none', // Allows clicking through to the 3D scene
-      padding: '20px',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
+      width: '100vw',
+      height: '100vh',
+      pointerEvents: 'none', // Click-through to 3D scene
+      zIndex: 100, // Ensure it sits on top of the 3D Canvas
       fontFamily: 'monospace',
       color: 'white',
       textShadow: '1px 1px 2px black',
       userSelect: 'none'
     }}>
       
-      {/* --- TOP: COMPLIANCE METER (Gamification) --- */}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {/* --- TOP ANCHOR: COMPLIANCE METER --- */}
+      <div style={{ 
+        position: 'absolute', 
+        top: '20px', 
+        left: '50%', 
+        transform: 'translateX(-50%)',
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center' 
+      }}>
         <div style={{ fontSize: '14px', marginBottom: '5px', opacity: 0.8 }}>COMPLIANCE LEVEL</div>
         
         {/* The Bar Container */}
@@ -65,7 +69,7 @@ export function HUD() {
         <div style={{ marginTop: '5px', fontWeight: 'bold' }}>{complianceScore}/100</div>
       </div>
 
-      {/* --- MIDDLE: RETICLE (Aiming Point) --- */}
+      {/* --- CENTER ANCHOR: RETICLE --- */}
       <div style={{
         position: 'absolute',
         top: '50%',
@@ -77,8 +81,18 @@ export function HUD() {
         borderRadius: '50%'
       }} />
 
-      {/* --- BOTTOM: CONTROLS --- */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+      {/* --- BOTTOM ANCHOR: CONTROLS --- */}
+      <div style={{ 
+        position: 'absolute',
+        bottom: '40px', // Forces it to stay 40px from bottom
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        gap: '15px',
+        pointerEvents: 'auto' // CRITICAL: Re-enables clicking on the button
+      }}>
         
         {/* Error Message Display */}
         {errorMessage && (
@@ -87,7 +101,7 @@ export function HUD() {
           </div>
         )}
 
-        {/* Status Text (Thinking/Speaking) */}
+        {/* Status Text */}
         {status === 'thinking' && (
           <div style={{ color: '#fbbf24', fontWeight: 'bold', animation: 'pulse 1s infinite' }}>
             ● ANALYZING...
@@ -106,9 +120,8 @@ export function HUD() {
           onMouseLeave={stopRecording}
           onTouchStart={startRecording}
           onTouchEnd={stopRecording}
-          disabled={status === 'thinking'} // Prevent double-send
+          disabled={status === 'thinking'} 
           style={{
-            pointerEvents: 'auto',
             padding: '15px 40px',
             fontSize: '18px',
             fontWeight: 'bold',
@@ -120,7 +133,8 @@ export function HUD() {
             boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
             transition: 'all 0.2s',
             opacity: status === 'thinking' ? 0.6 : 1,
-            outline: 'none'
+            outline: 'none',
+            whiteSpace: 'nowrap'
           }}
         >
           {status === 'recording' ? 'LISTENING...' : 'HOLD TO SPEAK'}
