@@ -6,9 +6,18 @@ interface BrainConfig {
 
 export type BrainState = 'idle' | 'recording' | 'thinking' | 'speaking' | 'error';
 
+// New: Interface for memory items
+interface HistoryItem {
+  role: 'user' | 'model';
+  parts: { text: string }[];
+}
+
 export function useNeuralBrain({ workerUrl }: BrainConfig) {
   const [status, setStatus] = useState<BrainState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // New: Memory State
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
@@ -17,10 +26,7 @@ export function useNeuralBrain({ workerUrl }: BrainConfig) {
   const startRecording = useCallback(async () => {
     try {
       setErrorMessage(null);
-      // Request simple audio
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Use simple webm for maximum compatibility
       const mimeType = "audio/webm";
 
       const recorder = new MediaRecorder(stream, { mimeType });
@@ -43,19 +49,22 @@ export function useNeuralBrain({ workerUrl }: BrainConfig) {
     }
   }, []);
 
+  // Updated: Now depends on 'history' to ensure we send the latest context
   const stopRecording = useCallback(() => {
     if (!mediaRecorder.current || mediaRecorder.current.state === 'inactive') return;
 
     setStatus('thinking');
 
     mediaRecorder.current.onstop = async () => {
-      // Create Blob
       const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-      
-      console.log("📦 Frontend Audio Size:", audioBlob.size); // Debug Log
+      console.log("📦 Frontend Audio Size:", audioBlob.size);
 
       const formData = new FormData();
       formData.append('audio', audioBlob, 'voice_input.webm');
+      
+      // New: Inject Memory (Last 3 turns / 6 items max)
+      // We JSON.stringify it so it passes as a text field in FormData
+      formData.append('history', JSON.stringify(history)); 
 
       try {
         const response = await fetch(`${workerUrl}/v1/turn`, {
@@ -71,9 +80,24 @@ export function useNeuralBrain({ workerUrl }: BrainConfig) {
         const responseBlob = await response.blob();
         const audioUrl = URL.createObjectURL(responseBlob);
         
-        // Log what the AI thought
-        const aiText = response.headers.get("X-Ai-Text");
+        // Retrieve transcripts from headers
+        const aiText = response.headers.get("X-Ai-Text") || "";
+        const userText = response.headers.get("X-User-Text") || "";
+        
+        console.log("🗣️ User Said:", userText);
         console.log("🤖 AI Replied:", aiText);
+
+        // New: Update History (Sliding Window)
+        if (userText && aiText) {
+          setHistory(prev => {
+            const newTurn: HistoryItem[] = [
+              { role: 'user', parts: [{ text: userText }] },
+              { role: 'model', parts: [{ text: aiText }] }
+            ];
+            // Keep only last 6 items (3 turns)
+            return [...prev, ...newTurn].slice(-6);
+          });
+        }
 
         playResponse(audioUrl);
 
@@ -83,12 +107,11 @@ export function useNeuralBrain({ workerUrl }: BrainConfig) {
         setStatus('error');
       }
 
-      // Cleanup
       mediaRecorder.current?.stream.getTracks().forEach(track => track.stop());
     };
 
     mediaRecorder.current.stop();
-  }, [workerUrl]);
+  }, [workerUrl, history]); // Added history dependency
 
   const playResponse = (url: string) => {
     setStatus('speaking');

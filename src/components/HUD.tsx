@@ -3,7 +3,7 @@ import { useNeuralBrain } from '../hooks/useNeuralBrain';
 
 // Configuration: Replace this with your actual Worker URL
 // If running locally, it's usually http://localhost:8787
-const WORKER_URL = "http://localhost:8787"; 
+const WORKER_URL = "https://sandbox-3d-brain.caleb-a71.workers.dev"; 
 
 export function HUD() {
   const { status, errorMessage, startRecording, stopRecording } = useNeuralBrain({ 
