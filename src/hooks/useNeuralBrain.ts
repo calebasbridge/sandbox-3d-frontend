@@ -6,7 +6,7 @@ interface BrainConfig {
 
 export type BrainState = 'idle' | 'recording' | 'thinking' | 'speaking' | 'error';
 
-// New: Interface for memory items
+// Interface for memory items
 interface HistoryItem {
   role: 'user' | 'model';
   parts: { text: string }[];
@@ -16,18 +16,36 @@ export function useNeuralBrain({ workerUrl }: BrainConfig) {
   const [status, setStatus] = useState<BrainState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // New: Memory State
+  // Memory State
   const [history, setHistory] = useState<HistoryItem[]>([]);
   
+  // NEW: Gamification State
+  const [complianceScore, setComplianceScore] = useState<number>(50); // Default 50 (Neutral)
+
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const audioPlayer = useRef<HTMLAudioElement | null>(null);
+
+  // Helper to play audio from a URL
+  const playResponse = (url: string) => {
+    setStatus('speaking');
+    if (audioPlayer.current) {
+      audioPlayer.current.pause();
+    }
+    const audio = new Audio(url);
+    audioPlayer.current = audio;
+    
+    // Reset to idle when audio finishes
+    audio.onended = () => setStatus('idle');
+    
+    audio.play().catch(e => console.error("Playback error:", e));
+  };
 
   const startRecording = useCallback(async () => {
     try {
       setErrorMessage(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = "audio/webm";
+      const mimeType = "audio/webm"; // Standard web audio
 
       const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorder.current = recorder;
@@ -39,93 +57,97 @@ export function useNeuralBrain({ workerUrl }: BrainConfig) {
         }
       };
 
-      recorder.start(); 
+      recorder.onstop = async () => {
+        setStatus('thinking');
+        const audioBlob = new Blob(audioChunks.current, { type: mimeType });
+        
+        // Prepare Payload
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'input.webm');
+        
+        // Inject History (The Amnesia Cure)
+        // We transform the history format to match what Gemini expects if needed, 
+        // or just send the raw array if the backend parses it.
+        // Based on your backend code, sending the raw JSON string is correct.
+        formData.append('history', JSON.stringify(history)); 
+
+        try {
+          const response = await fetch(workerUrl, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errData = await response.json() as any;
+            throw new Error(errData.error || `Server Error: ${response.status}`);
+          }
+
+          // 1. Get Audio
+          const responseBlob = await response.blob();
+          const audioUrl = URL.createObjectURL(responseBlob);
+
+          // 2. Read Headers (The Intelligence)
+          const aiText = response.headers.get("X-Ai-Text") || "";
+          const userText = response.headers.get("X-User-Text") || "";
+          
+          // NEW: Read Compliance Score
+          const scoreHeader = response.headers.get("X-Compliance-Score");
+          if (scoreHeader) {
+            const score = parseInt(scoreHeader, 10);
+            if (!isNaN(score)) {
+              console.log("📈 Compliance Score Updated:", score);
+              setComplianceScore(score);
+            }
+          }
+          
+          console.log("🗣️ User Said:", userText);
+          console.log("🤖 AI Replied:", aiText);
+
+          // 3. Update History (Sliding Window)
+          if (userText && aiText) {
+            setHistory(prev => {
+              const newTurn: HistoryItem[] = [
+                { role: 'user', parts: [{ text: userText }] },
+                { role: 'model', parts: [{ text: aiText }] }
+              ];
+              // Keep only last 6 items (3 turns)
+              return [...prev, ...newTurn].slice(-6);
+            });
+          }
+
+          playResponse(audioUrl);
+
+        } catch (err: any) {
+          console.error("Brain Error:", err);
+          setErrorMessage(err.message || "Connection failed");
+          setStatus('error');
+        }
+
+        // Clean up tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
       setStatus('recording');
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Mic Error:", err);
-      setErrorMessage("Microphone access denied.");
+      setErrorMessage("Microphone access denied or not available.");
       setStatus('error');
+    }
+  }, [workerUrl, history]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      mediaRecorder.current.stop();
     }
   }, []);
 
-  // Updated: Now depends on 'history' to ensure we send the latest context
-  const stopRecording = useCallback(() => {
-    if (!mediaRecorder.current || mediaRecorder.current.state === 'inactive') return;
-
-    setStatus('thinking');
-
-    mediaRecorder.current.onstop = async () => {
-      const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-      console.log("📦 Frontend Audio Size:", audioBlob.size);
-
-      const formData = new FormData();
-      formData.append('audio', audioBlob, 'voice_input.webm');
-      
-      // New: Inject Memory (Last 3 turns / 6 items max)
-      // We JSON.stringify it so it passes as a text field in FormData
-      formData.append('history', JSON.stringify(history)); 
-
-      try {
-        const response = await fetch(`${workerUrl}/v1/turn`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-           const errJson = await response.json() as any;
-           throw new Error(errJson.error || response.statusText);
-        }
-
-        const responseBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(responseBlob);
-        
-        // Retrieve transcripts from headers
-        const aiText = response.headers.get("X-Ai-Text") || "";
-        const userText = response.headers.get("X-User-Text") || "";
-        
-        console.log("🗣️ User Said:", userText);
-        console.log("🤖 AI Replied:", aiText);
-
-        // New: Update History (Sliding Window)
-        if (userText && aiText) {
-          setHistory(prev => {
-            const newTurn: HistoryItem[] = [
-              { role: 'user', parts: [{ text: userText }] },
-              { role: 'model', parts: [{ text: aiText }] }
-            ];
-            // Keep only last 6 items (3 turns)
-            return [...prev, ...newTurn].slice(-6);
-          });
-        }
-
-        playResponse(audioUrl);
-
-      } catch (err: any) {
-        console.error("Brain Error:", err);
-        setErrorMessage(err.message || "Connection failed");
-        setStatus('error');
-      }
-
-      mediaRecorder.current?.stream.getTracks().forEach(track => track.stop());
-    };
-
-    mediaRecorder.current.stop();
-  }, [workerUrl, history]); // Added history dependency
-
-  const playResponse = (url: string) => {
-    setStatus('speaking');
-    if (audioPlayer.current) {
-      audioPlayer.current.pause();
-    }
-    const audio = new Audio(url);
-    audioPlayer.current = audio;
-    audio.onended = () => {
-      setStatus('idle');
-      URL.revokeObjectURL(url);
-    };
-    audio.play().catch(e => console.error("Playback blocked:", e));
+  return {
+    status,
+    startRecording,
+    stopRecording,
+    errorMessage,
+    complianceScore // Exported for the HUD
   };
-
-  return { status, errorMessage, startRecording, stopRecording };
 }
