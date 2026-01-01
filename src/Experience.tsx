@@ -8,7 +8,7 @@ import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
 
-const LAYOUT_CAMERA = true; // NOTE: Set to false when you want first-person mode
+const LAYOUT_CAMERA = false; // NOTE: Set to false when you want first-person mode
 
 export const Experience = () => {
   return (
