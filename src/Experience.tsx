@@ -4,8 +4,7 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls, Environment, PointerLockControls } from '@react-three/drei';
 
-// --- IMPORTS ---
-// Updated to PascalCase (Dayroom, Marcus, Furniture) to match your filenames
+// --- WORLD ASSETS ---
 import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
@@ -14,6 +13,7 @@ export const Experience = () => {
   return (
     <>
       {/* 1. Lighting & Atmosphere */}
+      {/* "city" preset gives nice reflections on the metal toilet/bed frames */}
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
       
@@ -24,21 +24,34 @@ export const Experience = () => {
       {/* 3. The Player */}
       <Player />
       
-      {/* 4. The World Assets */}
+      {/* 4. The World Structure */}
       <Dayroom />
       <Marcus />
 
-      {/* 5. Furniture Placement */}
-      {/* You can adjust these numbers [x, y, z] to move items around */}
+      {/* 5. Furniture Layout */}
       
-      {/* Bed: Placing it to the left side of the cell/room */}
-      <Bed position={[-1.5, 0, -3]} />
+      {/* BED: Back Left Corner, rotated against the wall. 
+          Scale 0.015 fixes the "Giant Bed" issue. */}
+      <Bed 
+        position={[-1.5, 0, -3.5]} 
+        rotation={[0, Math.PI / 2, 0]} 
+        scale={0.015} 
+      />
 
-      {/* Toilet: Placing it to the right side */}
-      <Toilet position={[1.5, 0, -3]} />
+      {/* TOILET: Back Right Corner. 
+          Scale 0.8 keeps it human-sized but not massive. */}
+      <Toilet 
+        position={[1.5, 0, -3.5]} 
+        rotation={[0, -Math.PI / 2, 0]} 
+        scale={0.8} 
+      />
 
-      {/* Table: Placing it in the open area closer to the camera */}
-      <Table position={[0, 0, 1]} />
+      {/* TABLE: Center of the room. 
+          Scale 0.015 to match the bed style. */}
+      <Table 
+        position={[0, 0, 0]} 
+        scale={0.015} 
+      />
     </>
   );
 };
@@ -65,12 +78,12 @@ const Player = () => {
     sideVector.set(Number(left) - Number(right), 0, 0);
     direction.subVectors(frontVector, sideVector).normalize().multiplyScalar(speed);
 
-    // C. Apply velocity relative to where you are looking
+    // C. Apply velocity relative to camera look direction
     const linvel = body.current.linvel();
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
     
-    // Flatten vector so you don't fly up when looking up
+    // Flatten vector so looking up doesn't make you fly
     cameraDirection.y = 0;
     cameraDirection.normalize();
 
