@@ -13,12 +13,22 @@ export function Bed({ position, rotation = [0, 0, 0] }: { position: [number, num
   );
 }
 
-// 2. THE TOILET COMPONENT
+// 2. THE TOILET COMPONENT (Debug Version)
 export function Toilet({ position, rotation = [0, 0, 0] }: { position: [number, number, number], rotation?: [number, number, number] }) {
   const { scene } = useGLTF("/models/toilet/scene.gltf");
   return (
-    <RigidBody type="fixed" colliders="hull" position={position} rotation={rotation}>
-      <primitive object={scene} scale={0.015} />
+    // IGNORE the position passed in. Force it to center of room, 2 meters up.
+    <RigidBody type="fixed" colliders="hull" position={[0, 2, 0]} rotation={rotation}>
+      
+      {/* 1. Reset Scale to 1 (Maybe it didn't need shrinking?) */}
+      <primitive object={scene} scale={1} />
+      
+      {/* 2. LOCATOR BEACON: A Red Wireframe Box */}
+      <mesh>
+         <boxGeometry args={[0.5, 0.5, 0.5]} />
+         <meshStandardMaterial color="red" wireframe />
+      </mesh>
+
     </RigidBody>
   );
 }
