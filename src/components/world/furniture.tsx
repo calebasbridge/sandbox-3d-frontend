@@ -1,5 +1,7 @@
+import { useEffect, useMemo, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import { RigidBody } from "@react-three/rapier";
+import * as THREE from "three";
 
 interface FurnitureProps {
   position: [number, number, number];
@@ -17,12 +19,30 @@ export function Bed({ position, rotation = [0, 0, 0], scale = 1 }: FurnitureProp
   );
 }
 
-// 2. THE TOILET (Clean Version - No Red Box)
+// 2. THE TOILET (Floor-snapped)
 export function Toilet({ position, rotation = [0, 0, 0], scale = 1 }: FurnitureProps) {
   const { scene } = useGLTF("/models/toilet/scene.gltf");
+  const groupRef = useRef<THREE.Group>(null);
+
+  const offset = useMemo(() => {
+    const temp = scene.clone(true);
+    temp.scale.setScalar(scale);
+    temp.updateMatrixWorld(true);
+
+    const box = new THREE.Box3().setFromObject(temp);
+    return new THREE.Vector3(0, -box.min.y, 0);
+  }, [scene, scale]);
+
+  useEffect(() => {
+    if (!groupRef.current) return;
+    groupRef.current.position.copy(offset);
+  }, [offset]);
+
   return (
     <RigidBody type="fixed" colliders="hull" position={position} rotation={rotation}>
-      <primitive object={scene} scale={scale} />
+      <group ref={groupRef}>
+        <primitive object={scene} scale={scale} />
+      </group>
     </RigidBody>
   );
 }

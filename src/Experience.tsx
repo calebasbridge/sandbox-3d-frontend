@@ -11,6 +11,11 @@ import { Bed, Toilet, Table } from './components/world/furniture';
 export const Experience = () => {
   return (
     <>
+      
+      {/* DEBUG HELPERS — TEMPORARY */}
+      <gridHelper args={[50, 50]} />
+      <axesHelper args={[5]} />
+      
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
       <PointerLockControls />
@@ -36,9 +41,9 @@ export const Experience = () => {
       {/* TOILET: Further BEHIND the Bed.
           Position: 0, 0, -4.5 */}
       <Toilet 
-        position={[0, 0, -4.5]} 
-        rotation={[0, -Math.PI / 2, 0]} 
-        scale={1.5} 
+        position={[2.25 , 0, -1.6]} 
+        rotation={[0, Math.PI, 0]} 
+        scale={1.75} 
       />
 
       {/* TABLE: Directly IN FRONT of Marcus.
