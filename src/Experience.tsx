@@ -2,35 +2,31 @@ import { RigidBody } from '@react-three/rapier';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useKeyboardControls, Environment } from '@react-three/drei';
+import { useKeyboardControls, Environment, PointerLockControls } from '@react-three/drei'; // Added PointerLockControls
 
-// --- NEW IMPORTS ---
-// Ensure you have created these files in src/components/world/ as discussed
+// Imports
 import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 
 export const Experience = () => {
   return (
     <>
-      {/* 1. Lighting & Atmosphere */}
-      {/* 'preset="city"' provides quick, realistic reflection/lighting for GLTF models */}
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 10, 5]} intensity={1} castShadow />
+      
+      {/* 1. ENABLE MOUSE LOOK */}
+      {/* Click the screen to lock the mouse. Press ESC to unlock. */}
+      <PointerLockControls />
 
-      {/* 2. The Player (You) - Logic Preserved */}
       <Player />
-
-      {/* 3. The World (Assets) */}
-      {/* Replaces the manual 'group' and boxGeometry */}
+      
       <Dayroom />
       <Marcus />
     </>
   );
 };
 
-// --- Sub-Component: The Player Controller ---
-// (Preserved exactly as provided to maintain your current movement logic)
+// ... (Player component stays mostly the same, just ensure imports match)
 const Player = () => {
   const body = useRef<any>(null);
   const [, getKeys] = useKeyboardControls();
@@ -52,27 +48,37 @@ const Player = () => {
     sideVector.set(Number(left) - Number(right), 0, 0);
     direction.subVectors(frontVector, sideVector).normalize().multiplyScalar(speed);
 
-    // C. Apply velocity
+    // C. Apply velocity relative to where you are looking
     const linvel = body.current.linvel();
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
     
-    // Helper to move relative to camera look direction
-    const theta = Math.atan2(cameraDirection.x, cameraDirection.z);
-    
-    // Calculate new X and Z velocities
-    const x = direction.x * Math.cos(theta) + direction.z * Math.sin(theta);
-    const z = direction.z * Math.cos(theta) - direction.x * Math.sin(theta);
+    // Flatten the vector so looking up doesn't make you fly/crawl
+    cameraDirection.y = 0;
+    cameraDirection.normalize();
 
-    body.current.setLinvel({ x: x, y: linvel.y, z: z }, true);
+    // Calculate movement vector based on camera direction
+    // (Simplified math for clarity)
+    const moveVector = new THREE.Vector3(direction.x, 0, direction.z);
+    moveVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(cameraDirection.x, cameraDirection.z));
 
-    // D. Sync Camera
+    // Refined Movement Logic
+    // If we are moving, apply velocity. If not, stop (prevents sliding).
+    if (direction.length() > 0) {
+        // We use the camera's rotation to determine "Forward"
+        const euler = new THREE.Euler(0, camera.rotation.y, 0);
+        const finalDir = direction.clone().applyEuler(euler);
+        body.current.setLinvel({ x: finalDir.x, y: linvel.y, z: finalDir.z }, true);
+    } else {
+        body.current.setLinvel({ x: 0, y: linvel.y, z: 0 }, true);
+    }
+
+    // D. Sync Camera Position to Body
     const translation = body.current.translation();
     state.camera.position.set(translation.x, translation.y + 1.6, translation.z); 
   });
 
   return (
-    // Adjusted spawn position (0,2,4) to ensure you don't spawn trapped inside a wall
     <RigidBody ref={body} colliders="hull" restitution={0.2} friction={1} lockRotations position={[0, 2, 4]}>
       <mesh visible={false}>
         <capsuleGeometry args={[0.5, 1, 4]} />
