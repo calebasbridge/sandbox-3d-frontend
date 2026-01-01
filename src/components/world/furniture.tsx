@@ -97,6 +97,34 @@ export function Table({ position, rotation = [0, 0, 0], scale = 1 }: FurniturePr
     groupRef.current.position.copy(offset);
   }, [offset]);
 
+  useEffect(() => {
+    // Force table materials to be fully opaque
+    scene.traverse((obj) => {
+      if (!(obj as any).isMesh) return;
+
+      const mesh = obj as THREE.Mesh;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+
+      materials.forEach((mat) => {
+        if (!mat) return;
+
+        // Optional: only affect things that look like the tabletop by name
+        // If this doesn't work (names differ), comment out the next 3 lines to affect the whole table.
+        // const name = `${mesh.name} ${mat.name}`.toLowerCase();
+        // if (!name.includes("top") && !name.includes("table")) return;
+
+        mat.transparent = false;
+        mat.opacity = 1;
+        // These two help avoid weird blending artifacts in some GLTFs
+        mat.depthWrite = true;
+        mat.alphaTest = 0;
+
+        mat.needsUpdate = true;
+      });
+    });
+  }, [scene]);
+
+
   return (
     <RigidBody type="fixed" colliders="hull" position={position} rotation={rotation}>
       <group ref={groupRef}>
