@@ -28,7 +28,7 @@ function App() {
       <KeyboardControls map={keyboardMap}>
         <Canvas shadows camera={{ fov: 45, position: [0, 5, 10] }}>
           <Suspense fallback={null}>
-            <Physics>
+            <Physics debug>
               <Experience />
             </Physics>
           </Suspense>

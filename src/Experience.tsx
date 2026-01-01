@@ -2,31 +2,48 @@ import { RigidBody } from '@react-three/rapier';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useKeyboardControls, Environment, PointerLockControls } from '@react-three/drei'; // Added PointerLockControls
+import { useKeyboardControls, Environment, PointerLockControls } from '@react-three/drei';
 
-// Imports
+// --- IMPORTS ---
+// Updated to PascalCase (Dayroom, Marcus, Furniture) to match your filenames
 import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
+import { Bed, Toilet, Table } from './components/world/furniture';
 
 export const Experience = () => {
   return (
     <>
+      {/* 1. Lighting & Atmosphere */}
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
       
-      {/* 1. ENABLE MOUSE LOOK */}
-      {/* Click the screen to lock the mouse. Press ESC to unlock. */}
+      {/* 2. Controls */}
+      {/* Click screen to lock mouse. ESC to unlock. */}
       <PointerLockControls />
 
+      {/* 3. The Player */}
       <Player />
       
+      {/* 4. The World Assets */}
       <Dayroom />
       <Marcus />
+
+      {/* 5. Furniture Placement */}
+      {/* You can adjust these numbers [x, y, z] to move items around */}
+      
+      {/* Bed: Placing it to the left side of the cell/room */}
+      <Bed position={[-1.5, 0, -3]} />
+
+      {/* Toilet: Placing it to the right side */}
+      <Toilet position={[1.5, 0, -3]} />
+
+      {/* Table: Placing it in the open area closer to the camera */}
+      <Table position={[0, 0, 1]} />
     </>
   );
 };
 
-// ... (Player component stays mostly the same, just ensure imports match)
+// --- PLAYER CONTROLLER (Unchanged) ---
 const Player = () => {
   const body = useRef<any>(null);
   const [, getKeys] = useKeyboardControls();
@@ -53,19 +70,15 @@ const Player = () => {
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
     
-    // Flatten the vector so looking up doesn't make you fly/crawl
+    // Flatten vector so you don't fly up when looking up
     cameraDirection.y = 0;
     cameraDirection.normalize();
 
-    // Calculate movement vector based on camera direction
-    // (Simplified math for clarity)
+    // Calculate movement vector
     const moveVector = new THREE.Vector3(direction.x, 0, direction.z);
     moveVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(cameraDirection.x, cameraDirection.z));
 
-    // Refined Movement Logic
-    // If we are moving, apply velocity. If not, stop (prevents sliding).
     if (direction.length() > 0) {
-        // We use the camera's rotation to determine "Forward"
         const euler = new THREE.Euler(0, camera.rotation.y, 0);
         const finalDir = direction.clone().applyEuler(euler);
         body.current.setLinvel({ x: finalDir.x, y: linvel.y, z: finalDir.z }, true);
@@ -73,7 +86,7 @@ const Player = () => {
         body.current.setLinvel({ x: 0, y: linvel.y, z: 0 }, true);
     }
 
-    // D. Sync Camera Position to Body
+    // D. Sync Camera
     const translation = body.current.translation();
     state.camera.position.set(translation.x, translation.y + 1.6, translation.z); 
   });
