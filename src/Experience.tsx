@@ -8,7 +8,7 @@ import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
 
-const LAYOUT_CAMERA = false; // NOTE: Set to false when you want first-person mode
+const LAYOUT_CAMERA = true; // NOTE: Set to false when you want first-person mode
 
 export const Experience = () => {
   return (
@@ -54,8 +54,9 @@ export const Experience = () => {
       />
 
       <Table 
-        position={[0, 0, -1]} 
-        scale={0.015} 
+        position={[0, 0, 6.5]}
+        rotation={[0, 0, 0]} 
+        scale={0.008} 
       />
     </>
   );

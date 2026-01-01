@@ -74,12 +74,34 @@ export function Toilet({ position, rotation = [0, 0, 0], scale = 1 }: FurnitureP
   );
 }
 
-// 3. THE TABLE
+// 3. THE TABLE (Centered + Floor-snapped)
 export function Table({ position, rotation = [0, 0, 0], scale = 1 }: FurnitureProps) {
   const { scene } = useGLTF("/models/table/scene.gltf");
+  const groupRef = useRef<THREE.Group>(null);
+
+  const offset = useMemo(() => {
+    const temp = scene.clone(true);
+    temp.scale.setScalar(scale);
+    temp.updateMatrixWorld(true);
+
+    const box = new THREE.Box3().setFromObject(temp);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    // center X/Z + snap bottom to Y=0
+    return new THREE.Vector3(-center.x, -box.min.y, -center.z);
+  }, [scene, scale]);
+
+  useEffect(() => {
+    if (!groupRef.current) return;
+    groupRef.current.position.copy(offset);
+  }, [offset]);
+
   return (
     <RigidBody type="fixed" colliders="hull" position={position} rotation={rotation}>
-      <primitive object={scene} scale={scale} />
+      <group ref={groupRef}>
+        <primitive object={scene} scale={scale} />
+      </group>
     </RigidBody>
   );
 }
