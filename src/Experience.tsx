@@ -12,44 +12,41 @@ import { Bed, Toilet, Table } from './components/world/furniture';
 export const Experience = () => {
   return (
     <>
-      {/* 1. Lighting & Atmosphere */}
-      {/* "city" preset gives nice reflections on the metal toilet/bed frames */}
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
-      
-      {/* 2. Controls */}
-      {/* Click screen to lock mouse. ESC to unlock. */}
       <PointerLockControls />
-
-      {/* 3. The Player */}
       <Player />
       
       {/* 4. The World Structure */}
       <Dayroom />
+      
+      {/* MARCUS (The Anchor) is at [0, 0, -2] */}
       <Marcus />
 
-      {/* 5. Furniture Layout */}
+      {/* 5. Furniture Layout (Clustered around Marcus) */}
       
-      {/* BED: Back Left Corner, rotated against the wall. 
-          Scale 0.015 fixes the "Giant Bed" issue. */}
+      {/* BED: Moved drastically. 
+          Was [-1.5, ...], Now [-1, 0, -2]. 
+          This puts it literally touching Marcus's left elbow. */}
       <Bed 
-        position={[-1.5, 0, -3.5]} 
+        position={[-1, 0, -2]} 
         rotation={[0, Math.PI / 2, 0]} 
         scale={0.015} 
       />
 
-      {/* TOILET: Back Right Corner. 
-          Scale 0.8 keeps it human-sized but not massive. */}
+      {/* TOILET (Sink Combo): 
+          Moved to [1, 0, -2] (Touching Marcus's right elbow).
+          Scale bumped from 0.8 -> 1.5 to make it substantial. */}
       <Toilet 
-        position={[1.5, 0, -3.5]} 
+        position={[1, 0, -2]} 
         rotation={[0, -Math.PI / 2, 0]} 
-        scale={0.8} 
+        scale={1.5} 
       />
 
-      {/* TABLE: Center of the room. 
-          Scale 0.015 to match the bed style. */}
+      {/* TABLE: 
+          Moved to [0, 0, -0.5] (Directly in front of Marcus). */}
       <Table 
-        position={[0, 0, 0]} 
+        position={[0, 0, -0.5]} 
         scale={0.015} 
       />
     </>
@@ -69,25 +66,15 @@ const Player = () => {
 
   useFrame((state) => {
     if (!body.current) return;
-
-    // A. Get keyboard state
     const { forward, backward, left, right } = getKeys();
-
-    // B. Calculate movement
     frontVector.set(0, 0, Number(backward) - Number(forward));
     sideVector.set(Number(left) - Number(right), 0, 0);
     direction.subVectors(frontVector, sideVector).normalize().multiplyScalar(speed);
-
-    // C. Apply velocity relative to camera look direction
     const linvel = body.current.linvel();
     const cameraDirection = new THREE.Vector3();
     camera.getWorldDirection(cameraDirection);
-    
-    // Flatten vector so looking up doesn't make you fly
     cameraDirection.y = 0;
     cameraDirection.normalize();
-
-    // Calculate movement vector
     const moveVector = new THREE.Vector3(direction.x, 0, direction.z);
     moveVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(cameraDirection.x, cameraDirection.z));
 
@@ -98,8 +85,6 @@ const Player = () => {
     } else {
         body.current.setLinvel({ x: 0, y: linvel.y, z: 0 }, true);
     }
-
-    // D. Sync Camera
     const translation = body.current.translation();
     state.camera.position.set(translation.x, translation.y + 1.6, translation.z); 
   });
