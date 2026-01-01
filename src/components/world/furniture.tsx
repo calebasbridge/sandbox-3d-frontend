@@ -98,7 +98,7 @@ export function Table({ position, rotation = [0, 0, 0], scale = 1 }: FurniturePr
   }, [offset]);
 
   useEffect(() => {
-    // Force table materials to be fully opaque
+    // // NOTE: Tabletop transparency can be forced here if needed later
     scene.traverse((obj) => {
       if (!(obj as any).isMesh) return;
 
