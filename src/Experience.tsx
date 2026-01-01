@@ -2,11 +2,13 @@ import { RigidBody } from '@react-three/rapier';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useKeyboardControls, Environment, PointerLockControls } from '@react-three/drei';
+import { useKeyboardControls, Environment, PointerLockControls, OrbitControls } from '@react-three/drei';
 
 import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
+
+const LAYOUT_CAMERA = true; // NOTE: Set to false when you want first-person mode
 
 export const Experience = () => {
   return (
@@ -18,36 +20,39 @@ export const Experience = () => {
       
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
-      <PointerLockControls />
-      <Player />
+      {LAYOUT_CAMERA ? (
+        <OrbitControls
+          makeDefault
+          enableDamping
+          dampingFactor={0.08}
+          minDistance={0.5}
+          maxDistance={60}
+          maxPolarAngle={Math.PI * 0.49}
+        />
+      ) : (
+        <>
+          <PointerLockControls />
+          <Player />
+        </>
+      )}
       
       <Dayroom />
       
       {/* MARCUS (Anchor Point: 0, 0, -2) */}
       <Marcus />
 
-      {/* --- STRATEGY: SINGLE FILE LINE (X=0) --- */}
-      {/* If Marcus is inside, these MUST be inside too. */}
-      
-      {/* BED: Directly BEHIND Marcus. 
-          Position: 0 (Center), 0 (Floor), -3.5 (Behind Marcus) 
-          Rotation: 0 (Normal) to see its full length. */}
       <Bed 
-        position={[0, 0, -3.5]} 
+        position={[-2.0, 0, -0.1]} 
         rotation={[0, 0, 0]} 
-        scale={0.015} 
+        scale={0.013} 
       />
 
-      {/* TOILET: Further BEHIND the Bed.
-          Position: 0, 0, -4.5 */}
       <Toilet 
         position={[2.25 , 0, -1.6]} 
         rotation={[0, Math.PI, 0]} 
         scale={1.75} 
       />
 
-      {/* TABLE: Directly IN FRONT of Marcus.
-          Position: 0, 0, -1 */}
       <Table 
         position={[0, 0, -1]} 
         scale={0.015} 
@@ -56,7 +61,6 @@ export const Experience = () => {
   );
 };
 
-// ... (Player component stays exactly the same)
 const Player = () => {
     const body = useRef<any>(null);
     const [, getKeys] = useKeyboardControls();
