@@ -106,7 +106,7 @@ function App() {
       <KeyboardControls map={keyboardMap}>
         <Canvas shadows camera={{ fov: 45, position: [0, 5, 10] }}>
           <Suspense fallback={null}>
-            <Physics debug>
+            <Physics>
               {/* Passing the Brain Status down so Marcus can react */}
               <Experience brainStatus={status} />
             </Physics>
