@@ -28,7 +28,7 @@ function App() {
     errorMessage 
   } = useNeuralBrain({ 
     // ⚠️ TODO: Replace this string with your actual Cloudflare Worker URL from Phase 2
-    workerUrl: 'https://sandbox-3d-brain.yourname.workers.dev' 
+    workerUrl: 'https://sandbox-3d-brain.caleb-a71.workers.dev' 
   });
 
   // --- B. INTERACTION LOGIC (Spacebar Toggle) ---
