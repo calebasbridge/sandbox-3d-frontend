@@ -4,22 +4,36 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls, Environment, PointerLockControls, OrbitControls } from '@react-three/drei';
 
+// 1. Import BrainState type
+import type { BrainState } from './hooks/useNeuralBrain';
+
 import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
 
-const LAYOUT_CAMERA = true; // NOTE: Set to false when you want first-person mode
+const LAYOUT_CAMERA = false; 
 
-export const Experience = () => {
+// 2. Define Interface for Props
+interface ExperienceProps {
+  brainStatus: BrainState;
+}
+
+// 3. Update Component Signature
+export const Experience = ({ brainStatus }: ExperienceProps) => {
+  
+  // 4. Derive Visual State
+  const isThinking = brainStatus === 'thinking';
+  const isSpeaking = brainStatus === 'speaking';
+
   return (
     <>
-      
       {/* DEBUG HELPERS — TEMPORARY */}
-      <gridHelper args={[50, 50]} />
-      <axesHelper args={[5]} />
+      {/* <gridHelper args={[50, 50]} /> */}
+      {/* <axesHelper args={[5]} /> */}
       
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
+      
       {LAYOUT_CAMERA ? (
         <OrbitControls
           makeDefault
@@ -38,8 +52,12 @@ export const Experience = () => {
       
       <Dayroom />
       
-      {/* MARCUS (Anchor Point: 0, 0, -2) */}
-      <Marcus />
+      {/* 5. PASS BRAIN STATE TO MARCUS */}
+      <Marcus 
+        isSpeaking={isSpeaking} 
+        isThinking={isThinking} 
+        // Position is handled inside your Marcus component default or you can pass it here if needed
+      />
 
       <Bed 
         position={[-2.0, 0, -0.1]} 
@@ -62,6 +80,7 @@ export const Experience = () => {
   );
 };
 
+// --- PLAYER COMPONENT (UNTOUCHED) ---
 const Player = () => {
     const body = useRef<any>(null);
     const [, getKeys] = useKeyboardControls();
