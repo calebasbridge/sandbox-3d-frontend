@@ -77,7 +77,7 @@ export function Marcus({
 
   // Scale Adjustment (FBX units can be huge, usually need 0.01 or similar)
   // You might need to tweak this number depending on the raw file
-  const scale = 0.01; 
+  const scale = 0.013; 
 
   return (
     <RigidBody type="fixed" colliders="hull" position={[0, 0, 2]} {...props}>

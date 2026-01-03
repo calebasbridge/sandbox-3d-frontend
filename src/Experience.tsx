@@ -4,17 +4,16 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls, Environment, PointerLockControls, OrbitControls } from '@react-three/drei';
 
-// ✅ FIX 1: Explicit "type" import prevents the import error
+// ✅ FIX: Explicit "type" import prevents the import error
 import type { BrainState } from './hooks/useNeuralBrain';
 
 import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
 
-// ✅ FIX 2: Set to false to restore First-Person view
-const LAYOUT_CAMERA = false; 
+const LAYOUT_CAMERA = true; 
 
-// ✅ FIX 3: Add complianceScore to props (Prepared for Mixamo)
+// ✅ FIX: Add complianceScore to props (Prepared for Mixamo)
 interface ExperienceProps {
   brainStatus: BrainState;
   complianceScore?: number; 
@@ -57,27 +56,27 @@ export const Experience = ({ brainStatus, complianceScore = 50 }: ExperienceProp
         isSpeaking={isSpeaking} 
         isThinking={isThinking} 
         complianceScore={complianceScore}
-        position={[0, 0, 2]} // Brought closer to camera
-        rotation={[0, 0, 0]} // Rotated to face player
+        position={[0, 0, 4]} // Brought closer to camera
+        rotation={[0, Math.PI / -2, 0]} // Rotated to face player
       />
 
       {/* Furniture */}
       <Bed 
-        position={[-2.0, 0, -0.1]} 
+        position={[-2.16, 0, -0.1]} 
         rotation={[0, 0, 0]} 
-        scale={0.013} 
+        scale={0.011} 
       />
 
       <Toilet 
-        position={[2.25 , 0, -1.6]} 
+        position={[2.4 , 0, -1.85]} 
         rotation={[0, Math.PI, 0]} 
-        scale={1.75} 
+        scale={1.25} 
       />
 
       <Table 
         position={[0, 0, 6.5]}
         rotation={[0, 0, 0]} 
-        scale={0.008} 
+        scale={0.006} 
       />
     </>
   );
