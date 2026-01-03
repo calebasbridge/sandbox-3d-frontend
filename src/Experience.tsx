@@ -11,7 +11,7 @@ import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
 
-const LAYOUT_CAMERA = false; 
+const LAYOUT_CAMERA = true; 
 
 // 2. Define Interface for Props
 interface ExperienceProps {
@@ -57,6 +57,8 @@ export const Experience = ({ brainStatus }: ExperienceProps) => {
         isSpeaking={isSpeaking} 
         isThinking={isThinking} 
         // Position is handled inside your Marcus component default or you can pass it here if needed
+        position={[0, 0, 4]} 
+        rotation={[0, Math.PI, 0]}
       />
 
       <Bed 
