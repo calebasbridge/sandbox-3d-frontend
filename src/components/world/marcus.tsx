@@ -1,51 +1,94 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useEffect, useRef } from "react";
+import { useFBX, useAnimations } from "@react-three/drei";
 import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 
-// 1. Add Interface for Props
 interface MarcusProps {
   isSpeaking?: boolean;
   isThinking?: boolean;
-  // Allow passing standard props if needed later
-  [key: string]: any; 
+  complianceScore?: number; // Pass the score to drive emotion
+  [key: string]: any;
 }
 
-export function Marcus({ isSpeaking = false, isThinking = false, ...props }: MarcusProps) {
-  const { scene } = useGLTF("/models/marcus/scene.gltf");
+export function Marcus({ 
+  isSpeaking = false, 
+  isThinking = false, 
+  complianceScore = 50, // Default to Neutral
+  ...props 
+}: MarcusProps) {
+  
   const groupRef = useRef<THREE.Group>(null);
 
-  // Keep scale as a single source of truth
-  const scale = 1.8;
+  // 1. LOAD THE ASSETS (Body + Animations)
+  // We load the body from 'idle'
+  const idle = useFBX("/models/marcus/idle.fbx");
+  
+  // We load other clips solely for their animation data
+  const talking = useFBX("/models/marcus/talking.fbx");
+  const angry = useFBX("/models/marcus/angry.fbx");
+  const yelling = useFBX("/models/marcus/yelling.fbx");
 
-  // Compute how much we need to move the model DOWN so its feet touch Y=0
-  const offset = useMemo(() => {
-    const temp = scene.clone(true);
-    temp.scale.setScalar(scale);
-    temp.updateMatrixWorld(true);
+  // 2. EXTRACT ANIMATIONS
+  // Mixamo usually names the animation inside the file "mixamo.com". 
+  // We rename them here to avoid conflicts.
+  idle.animations[0].name = "Idle";
+  talking.animations[0].name = "Talking";
+  angry.animations[0].name = "Angry";
+  yelling.animations[0].name = "Yelling";
 
-    const box = new THREE.Box3().setFromObject(temp);
+  // Combine all clips into one list
+  const allAnimations = [
+    idle.animations[0],
+    talking.animations[0],
+    angry.animations[0],
+    yelling.animations[0]
+  ];
 
-    // Shift so the lowest point becomes Y=0
-    return new THREE.Vector3(0, -box.min.y, 0);
-  }, [scene, scale]);
+  // 3. SETUP ANIMATION MIXER
+  const { actions } = useAnimations(allAnimations, groupRef);
 
+  // 4. LOGIC ENGINE: Decide which animation to play
   useEffect(() => {
-    if (!groupRef.current) return;
-    groupRef.current.position.copy(offset);
-  }, [offset]);
+    // Reset all animations when state changes slightly
+    const playAnim = (name: string) => {
+        actions[name]?.reset().fadeIn(0.5).play();
+        // Stop others? usually actions handle blending, but we can enforce it:
+        Object.keys(actions).forEach(key => {
+            if(key !== name) actions[key]?.fadeOut(0.5);
+        });
+    };
+
+    if (isSpeaking) {
+        // If speaking, override everything with "Talking"
+        playAnim("Talking");
+    } else if (complianceScore < 30) {
+        // High tension/Angry
+        playAnim("Angry"); // Or "Yelling" if you want extreme
+    } else {
+        // Default State
+        playAnim("Idle");
+    }
+
+    // Cleanup on unmount
+    return () => {
+        Object.keys(actions).forEach(key => actions[key]?.fadeOut(0.5));
+    };
+  }, [actions, isSpeaking, complianceScore]);
+
+  // Scale Adjustment (FBX units can be huge, usually need 0.01 or similar)
+  // You might need to tweak this number depending on the raw file
+  const scale = 0.01; 
 
   return (
-    // RigidBody stays on the floor; the model inside is what we floor-snap
-    <RigidBody type="fixed" colliders="hull" position={[0, 0, -2]} {...props}>
+    <RigidBody type="fixed" colliders="hull" position={[0, 0, 2]} {...props}>
       <group ref={groupRef}>
-        <primitive object={scene} scale={scale} rotation={[0, Math.PI, 0]} />
+        {/* Render ONLY the Idle mesh (which now contains all animations) */}
+        <primitive object={idle} scale={scale} rotation={[0, Math.PI, 0]} />
         
-        {/* --- NEW: VISUAL FEEDBACK (The Halo) --- */}
-        {/* Attached to the model group so it moves with him */}
+        {/* Visual Halo (Kept for debugging clarity) */}
         {(isSpeaking || isThinking) && (
-          <mesh position={[0, 2.2, 0]}>
-            <sphereGeometry args={[0.15, 16, 16]} />
+          <mesh position={[0, 180, 0]}> {/* Adjusted Y for FBX scale */}
+            <sphereGeometry args={[10, 16, 16]} /> 
             <meshStandardMaterial 
               color={isSpeaking ? "#00ff00" : "#ffff00"} 
               emissive={isSpeaking ? "#00ff00" : "#ffff00"}
@@ -54,10 +97,12 @@ export function Marcus({ isSpeaking = false, isThinking = false, ...props }: Mar
             />
           </mesh>
         )}
-
       </group>
     </RigidBody>
   );
 }
 
-useGLTF.preload("/models/marcus/scene.gltf");
+// Preload to prevent pop-in
+useFBX.preload("/models/marcus/idle.fbx");
+useFBX.preload("/models/marcus/talking.fbx");
+useFBX.preload("/models/marcus/angry.fbx");

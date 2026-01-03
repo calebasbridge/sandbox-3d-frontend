@@ -4,36 +4,34 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls, Environment, PointerLockControls, OrbitControls } from '@react-three/drei';
 
-// 1. Import BrainState type
+// ✅ FIX 1: Explicit "type" import prevents the import error
 import type { BrainState } from './hooks/useNeuralBrain';
 
 import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
 
-const LAYOUT_CAMERA = true; 
+// ✅ FIX 2: Set to false to restore First-Person view
+const LAYOUT_CAMERA = false; 
 
-// 2. Define Interface for Props
+// ✅ FIX 3: Add complianceScore to props (Prepared for Mixamo)
 interface ExperienceProps {
   brainStatus: BrainState;
+  complianceScore?: number; 
 }
 
-// 3. Update Component Signature
-export const Experience = ({ brainStatus }: ExperienceProps) => {
+export const Experience = ({ brainStatus, complianceScore = 50 }: ExperienceProps) => {
   
-  // 4. Derive Visual State
   const isThinking = brainStatus === 'thinking';
   const isSpeaking = brainStatus === 'speaking';
 
   return (
     <>
-      {/* DEBUG HELPERS — TEMPORARY */}
-      {/* <gridHelper args={[50, 50]} /> */}
-      {/* <axesHelper args={[5]} /> */}
-      
+      {/* Lighting & Environment */}
       <Environment preset="city" />
       <ambientLight intensity={0.5} />
       
+      {/* Camera Logic */}
       {LAYOUT_CAMERA ? (
         <OrbitControls
           makeDefault
@@ -50,17 +48,20 @@ export const Experience = ({ brainStatus }: ExperienceProps) => {
         </>
       )}
       
+      {/* The Environment */}
       <Dayroom />
       
-      {/* 5. PASS BRAIN STATE TO MARCUS */}
+      {/* The Antagonist */}
+      {/* NOTE: The 'isSpeaking' error will vanish once you update Marcus.tsx */}
       <Marcus 
         isSpeaking={isSpeaking} 
         isThinking={isThinking} 
-        // Position is handled inside your Marcus component default or you can pass it here if needed
-        position={[0, 0, 4]} 
-        rotation={[0, Math.PI, 0]}
+        complianceScore={complianceScore}
+        position={[0, 0, 2]} // Brought closer to camera
+        rotation={[0, 0, 0]} // Rotated to face player
       />
 
+      {/* Furniture */}
       <Bed 
         position={[-2.0, 0, -0.1]} 
         rotation={[0, 0, 0]} 
@@ -82,7 +83,7 @@ export const Experience = ({ brainStatus }: ExperienceProps) => {
   );
 };
 
-// --- PLAYER COMPONENT (UNTOUCHED) ---
+// --- PLAYER COMPONENT (Standard FPS Controller) ---
 const Player = () => {
     const body = useRef<any>(null);
     const [, getKeys] = useKeyboardControls();

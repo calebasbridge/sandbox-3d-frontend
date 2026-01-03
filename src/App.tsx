@@ -8,9 +8,9 @@ import { useNeuralBrain } from './hooks/useNeuralBrain';
 
 // 2. Scene Imports
 import { Experience } from './Experience'; 
-// import { HUD } from './components/HUD'; // Commented out until we refactor it to accept brain props
+// import { HUD } from './components/HUD'; 
 
-// 3. Control Map - Removed "Space" (Jump) so it can be used for "Talk"
+// 3. Control Map - Space is reserved for "Talk", so we removed it from "Jump"
 const keyboardMap = [
   { name: 'forward', keys: ['ArrowUp', 'w', 'W'] },
   { name: 'backward', keys: ['ArrowDown', 's', 'S'] },
@@ -27,7 +27,7 @@ function App() {
     complianceScore,
     errorMessage 
   } = useNeuralBrain({ 
-    // ⚠️ TODO: Replace this string with your actual Cloudflare Worker URL from Phase 2
+    // Your Cloudflare Worker URL
     workerUrl: 'https://sandbox-3d-brain.caleb-a71.workers.dev' 
   });
 
@@ -56,7 +56,6 @@ function App() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative', background: 'black' }}>
       
       {/* --- C. 2D HUD LAYER (Overlay) --- */}
-      {/* Replacing the external HUD component temporarily to ensure visibility */}
       <div style={{ 
         position: 'absolute', 
         top: 20, 
@@ -106,9 +105,13 @@ function App() {
       <KeyboardControls map={keyboardMap}>
         <Canvas shadows camera={{ fov: 45, position: [0, 5, 10] }}>
           <Suspense fallback={null}>
+            {/* Removed debug={true} to hide yellow lines */}
             <Physics>
-              {/* Passing the Brain Status down so Marcus can react */}
-              <Experience brainStatus={status} />
+              {/* ✅ UPDATED: Passing Compliance Score to drive animations */}
+              <Experience 
+                brainStatus={status} 
+                complianceScore={complianceScore}
+              />
             </Physics>
           </Suspense>
         </Canvas>
