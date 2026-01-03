@@ -1,5 +1,5 @@
 import { RigidBody } from '@react-three/rapier';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls, Environment, PointerLockControls, OrbitControls } from '@react-three/drei';
@@ -11,7 +11,7 @@ import { Dayroom } from './components/world/dayroom';
 import { Marcus } from './components/world/marcus';
 import { Bed, Toilet, Table } from './components/world/furniture';
 
-const LAYOUT_CAMERA = true; 
+const LAYOUT_CAMERA = false; 
 
 // ✅ FIX: Add complianceScore to props (Prepared for Mixamo)
 interface ExperienceProps {
@@ -28,7 +28,25 @@ export const Experience = ({ brainStatus, complianceScore = 50 }: ExperienceProp
     <>
       {/* Lighting & Environment */}
       <Environment preset="city" />
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.4} />
+
+      // Experience.tsx (replace your spotlight block)
+      <ambientLight intensity={0.9} />
+
+      <directionalLight
+        position={[0, 2.2, 3]}   // in front of Marcus
+        intensity={1.5}
+        castShadow={false}
+        onUpdate={(light) => {
+          light.layers.set(1);   // this light only illuminates layer 1
+        }}
+      />
+
+      <directionalLight
+      position={[0, 1.5, 4]}     // extra “camera-ish” fill
+      intensity={1.2}
+      castShadow={false}
+      />
       
       {/* Camera Logic */}
       {LAYOUT_CAMERA ? (
@@ -50,8 +68,6 @@ export const Experience = ({ brainStatus, complianceScore = 50 }: ExperienceProp
       {/* The Environment */}
       <Dayroom />
       
-      {/* The Antagonist */}
-      {/* NOTE: The 'isSpeaking' error will vanish once you update Marcus.tsx */}
       <Marcus 
         isSpeaking={isSpeaking} 
         isThinking={isThinking} 
@@ -91,7 +107,11 @@ const Player = () => {
     const direction = new THREE.Vector3();
     const frontVector = new THREE.Vector3();
     const sideVector = new THREE.Vector3();
-  
+
+    useEffect(() => {
+      camera.rotation.set(0, -Math.PI / -2, 0); 
+    }, [camera]);
+
     useFrame((state) => {
       if (!body.current) return;
       const { forward, backward, left, right } = getKeys();
@@ -117,7 +137,7 @@ const Player = () => {
     });
   
     return (
-      <RigidBody ref={body} colliders="hull" restitution={0.2} friction={1} lockRotations position={[0, 2, 4]}>
+      <RigidBody ref={body} colliders="hull" restitution={0.2} friction={1} lockRotations position={[4, Math.PI / 6, 4]}>
         <mesh visible={false}>
           <capsuleGeometry args={[0.5, 1, 4]} />
         </mesh>
